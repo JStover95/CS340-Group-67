@@ -1,0 +1,22 @@
+[
+  {
+    "statusId": 1,
+    "statusCode": "IN_PROGRESS",
+    "description": "Order has been placed and is awaiting payment confirmation."
+  },
+  {
+    "statusId": 2,
+    "statusCode": "ORDERED",
+    "description": "Payment has been received and order is queued for fulfillment."
+  },
+  {
+    "statusId": 3,
+    "statusCode": "EN_ROUTE",
+    "description": "Order has left the warehouse and is in transit."
+  },
+  {
+    "statusId": 4,
+    "statusCode": "SHIPPED",
+    "description": "Order has been delivered to the customer."
+  }
+]

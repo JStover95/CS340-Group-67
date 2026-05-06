@@ -1,0 +1,26 @@
+[
+  {
+    "artistId": 1,
+    "name": "The Northern Lights",
+    "country": "Canada",
+    "bio": "Indie rock quartet known for atmospheric live sessions."
+  },
+  {
+    "artistId": 2,
+    "name": "Velvet Frequency",
+    "country": "UK",
+    "bio": "Synthwave duo blending retro textures with modern pop hooks."
+  },
+  {
+    "artistId": 3,
+    "name": "Sierra Blue",
+    "country": "USA",
+    "bio": "Singer-songwriter with roots in folk and acoustic storytelling."
+  },
+  {
+    "artistId": 4,
+    "name": "Monochrome Pulse",
+    "country": null,
+    "bio": null
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "customerId": 1,
+    "firstName": "Ava",
+    "lastName": "Martinez",
+    "email": "ava.martinez@example.com",
+    "password": "hash_pw_ava_01",
+    "shippingAddress": "101 Maple St Portland OR"
+  },
+  {
+    "customerId": 2,
+    "firstName": "Liam",
+    "lastName": "Nguyen",
+    "email": "liam.nguyen@example.com",
+    "password": "hash_pw_liam_02",
+    "shippingAddress": "202 Oak Ave Seattle WA"
+  },
+  {
+    "customerId": 3,
+    "firstName": "Noah",
+    "lastName": "Johnson",
+    "email": "noah.johnson@example.com",
+    "password": "hash_pw_noah_03",
+    "shippingAddress": "303 Pine Rd Austin TX"
+  },
+  {
+    "customerId": 4,
+    "firstName": "Emma",
+    "lastName": "Davis",
+    "email": "emma.davis@example.com",
+    "password": "hash_pw_emma_04",
+    "shippingAddress": "404 Cedar Ln Denver CO"
+  },
+  {
+    "customerId": 5,
+    "firstName": "Sophia",
+    "lastName": "Brown",
+    "email": "sophia.brown@example.com",
+    "password": "hash_pw_sophia_05",
+    "shippingAddress": "505 Birch Dr Miami FL"
+  }
+]
