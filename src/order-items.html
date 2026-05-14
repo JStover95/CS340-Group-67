@@ -68,35 +68,43 @@
 
   <script>
     window.dataReady.then(function () {
-      var rows = AppData.orderItems.map(function (oi) {
-        var order = AppUtils.findById(AppData.orders, "orderId", oi.orderId);
-        var item = AppUtils.findById(AppData.items, "itemId", oi.itemId);
-        var unit = item != null ? Number(item.price) : NaN;
-        var qty = Number(oi.quantity);
-        var derivedPrice = Number.isFinite(unit) ? unit : null;
-        var derivedLineTotal =
-          Number.isFinite(unit) && Number.isFinite(qty) ? unit * qty : null;
-        return Object.assign({}, oi, {
-          orderLabel: AppUtils.orderItemOrderLabel(order),
-          itemTitle: item ? item.title : "—",
-          derivedPrice: derivedPrice,
-          derivedLineTotal: derivedLineTotal,
-        });
-      });
+      var tbody = document.getElementById("order-items-body");
       var tpl = Handlebars.compile(
         document.getElementById("tpl-order-items-rows").innerHTML
       );
-      document.getElementById("order-items-body").innerHTML = tpl({ rows: rows });
+      function buildRows() {
+        return AppData.orderItems.map(function (oi) {
+          var order = AppUtils.findById(AppData.orders, "orderId", oi.orderId);
+          var item = AppUtils.findById(AppData.items, "itemId", oi.itemId);
+          var unit = item != null ? Number(item.price) : NaN;
+          var qty = Number(oi.quantity);
+          var derivedPrice = Number.isFinite(unit) ? unit : null;
+          var derivedLineTotal =
+            Number.isFinite(unit) && Number.isFinite(qty) ? unit * qty : null;
+          return Object.assign({}, oi, {
+            orderLabel: AppUtils.orderItemOrderLabel(order),
+            itemTitle: item ? item.title : "—",
+            derivedPrice: derivedPrice,
+            derivedLineTotal: derivedLineTotal,
+          });
+        });
+      }
+      function render() {
+        tbody.innerHTML = tpl({ rows: buildRows() });
+      }
+      render();
 
-      document.getElementById("order-items-body").addEventListener("click", function (e) {
+      tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
         if (!btn) return;
+        var id = btn.getAttribute("data-order-item-id");
         if (
           !confirm(
             "Are you sure you want to delete this order item? This action cannot be undone."
           )
         )
           return;
+        if (AppUiMutations.removeByIdKey("orderItems", "orderItemId", id)) render();
         // TODO: Backend DELETE for OrderItems when API exists.
       });
     });

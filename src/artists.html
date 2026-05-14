@@ -60,13 +60,15 @@
 
   <script>
     window.dataReady.then(function () {
+      var tbody = document.getElementById("artists-body");
       var tplSource = document.getElementById("tpl-artists-rows").innerHTML;
       var templ = Handlebars.compile(tplSource);
-      document.getElementById("artists-body").innerHTML = templ({
-        artists: AppData.artists,
-      });
+      function render() {
+        tbody.innerHTML = templ({ artists: AppData.artists });
+      }
+      render();
 
-      document.getElementById("artists-body").addEventListener("click", function (e) {
+      tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
         if (!btn) return;
         var id = btn.getAttribute("data-artist-id");
@@ -76,6 +78,7 @@
           )
         )
           return;
+        if (AppUiMutations.removeByIdKey("artists", "artistId", id)) render();
         // TODO: Call backend DELETE when available. FK: deleting Artists may fail if Items reference this artist — surface constraint errors gracefully.
       });
     });

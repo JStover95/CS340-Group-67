@@ -124,4 +124,32 @@
       return email + "-" + ts;
     },
   };
+
+  /**
+   * In-memory-only mutations for client-side list deletes. JSON on disk is unchanged;
+   * a full page reload re-fetches sample data.
+   */
+  window.AppUiMutations = {
+    removeByIdKey: function (collectionKey, idKey, id) {
+      var arr = window.AppData[collectionKey];
+      if (!arr || !Array.isArray(arr)) return false;
+      var n = Number(id);
+      for (var i = 0; i < arr.length; i++) {
+        if (Number(arr[i][idKey]) === n) {
+          arr.splice(i, 1);
+          return true;
+        }
+      }
+      return false;
+    },
+    /** Removes the order and any in-memory order lines for that order (UI consistency only). */
+    removeOrderInMemory: function (orderId) {
+      if (!this.removeByIdKey("orders", "orderId", orderId)) return false;
+      var n = Number(orderId);
+      window.AppData.orderItems = window.AppData.orderItems.filter(function (oi) {
+        return Number(oi.orderId) !== n;
+      });
+      return true;
+    },
+  };
 })();

@@ -68,26 +68,34 @@
 
   <script>
     window.dataReady.then(function () {
-      var enriched = AppData.items.map(function (item) {
-        var a = AppUtils.findById(AppData.artists, "artistId", item.artistId);
-        var g = AppUtils.findById(AppData.genres, "genreId", item.genreId);
-        return Object.assign({}, item, {
-          artistName: a ? a.name : "—",
-          genreName: g ? g.name : "—",
-        });
-      });
+      var tbody = document.getElementById("items-body");
       var tpl = Handlebars.compile(document.getElementById("tpl-items-rows").innerHTML);
-      document.getElementById("items-body").innerHTML = tpl({ items: enriched });
+      function enrich() {
+        return AppData.items.map(function (item) {
+          var a = AppUtils.findById(AppData.artists, "artistId", item.artistId);
+          var g = AppUtils.findById(AppData.genres, "genreId", item.genreId);
+          return Object.assign({}, item, {
+            artistName: a ? a.name : "—",
+            genreName: g ? g.name : "—",
+          });
+        });
+      }
+      function render() {
+        tbody.innerHTML = tpl({ items: enrich() });
+      }
+      render();
 
-      document.getElementById("items-body").addEventListener("click", function (e) {
+      tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
         if (!btn) return;
+        var id = btn.getAttribute("data-item-id");
         if (
           !confirm(
             "Are you sure you want to delete this item? This action cannot be undone."
           )
         )
           return;
+        if (AppUiMutations.removeByIdKey("items", "itemId", id)) render();
         // TODO: Backend DELETE — FK if OrderItems reference this Item.
       });
     });

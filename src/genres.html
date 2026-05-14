@@ -58,10 +58,14 @@
 
   <script>
     window.dataReady.then(function () {
+      var tbody = document.getElementById("genres-body");
       var tpl = Handlebars.compile(document.getElementById("tpl-genres-rows").innerHTML);
-      document.getElementById("genres-body").innerHTML = tpl({ genres: AppData.genres });
+      function render() {
+        tbody.innerHTML = tpl({ genres: AppData.genres });
+      }
+      render();
 
-      document.getElementById("genres-body").addEventListener("click", function (e) {
+      tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
         if (!btn) return;
         var id = btn.getAttribute("data-genre-id");
@@ -71,6 +75,7 @@
           )
         )
           return;
+        if (AppUiMutations.removeByIdKey("genres", "genreId", id)) render();
         // TODO: Backend DELETE — FK violations if Items reference this Genre.
       });
     });

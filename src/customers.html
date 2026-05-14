@@ -62,18 +62,24 @@
 
   <script>
     window.dataReady.then(function () {
+      var tbody = document.getElementById("customers-body");
       var tpl = Handlebars.compile(document.getElementById("tpl-customers-rows").innerHTML);
-      document.getElementById("customers-body").innerHTML = tpl({ customers: AppData.customers });
+      function render() {
+        tbody.innerHTML = tpl({ customers: AppData.customers });
+      }
+      render();
 
-      document.getElementById("customers-body").addEventListener("click", function (e) {
+      tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
         if (!btn) return;
+        var id = btn.getAttribute("data-customer-id");
         if (
           !confirm(
             "Are you sure you want to delete this customer? This action cannot be undone."
           )
         )
           return;
+        if (AppUiMutations.removeByIdKey("customers", "customerId", id)) render();
         // TODO: Backend DELETE — FK if Orders reference this Customer.
       });
     });
