@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Order Item · OSU Record Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
+  <script src="./js/data.js"></script>
+  <script src="./js/layout.js"></script>
+</head>
+<body class="bg-gray-100 antialiased">
+  <header id="site-header" class="fixed left-0 right-0 top-0 z-50 bg-gray-900 text-white shadow"></header>
+  <div class="flex min-h-screen pt-14">
+    <aside id="site-nav" class="fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] w-56 shrink-0 overflow-y-auto border-r border-gray-200 bg-gray-50"></aside>
+    <main class="ml-56 flex-1 p-8">
+      <div id="err-not-found" class="hidden rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"></div>
+      <div id="form-wrap" class="hidden">
+        <h2 class="text-2xl font-bold text-gray-900">Edit Order Item</h2>
+        <form id="form-order-item" class="mt-6 max-w-xl space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"></form>
+      </div>
+    </main>
+  </div>
+
+  <script id="tpl-order-item-edit" type="text/x-handlebars-template">
+        <div>
+          <label for="orderId" class="block text-sm font-medium text-gray-700">Order</label>
+          <select id="orderId" name="orderId" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            {{#each orders}}
+            <option value="{{orderId}}" {{selected ../row.orderId orderId}}>{{label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div>
+          <label for="itemId" class="block text-sm font-medium text-gray-700">Item</label>
+          <select id="itemId" name="itemId" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            {{#each items}}
+            <option value="{{itemId}}" {{selected ../row.itemId itemId}}>{{title}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div>
+          <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+          <input id="quantity" name="quantity" type="number" min="1" step="1" required value="{{row.quantity}}" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <span class="block text-sm font-medium text-gray-700">Price</span>
+          <p id="display-price" class="mt-1 rounded-md bg-gray-100 px-3 py-2 text-sm tabular-nums text-gray-500">—</p>
+          <p class="mt-1 text-xs text-gray-500">Derived from the selected item’s catalog price (display only).</p>
+        </div>
+        <div>
+          <span class="block text-sm font-medium text-gray-700">Line Total</span>
+          <p id="display-line-total" class="mt-1 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium tabular-nums text-gray-500">—</p>
+        </div>
+        <div>
+          <button type="submit" class="inline-flex rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+            Submit
+          </button>
+        </div>
+  </script>
+
+  <script>
+    function getItemById(id) {
+      return AppUtils.findById(AppData.items, "itemId", id);
+    }
+
+    function formatMoney(n) {
+      if (n == null || Number.isNaN(Number(n))) return "—";
+      return "$" + Number(n).toFixed(2);
+    }
+
+    function normalizeQty(raw) {
+      var q = parseInt(raw, 10);
+      return Number.isFinite(q) && q >= 1 ? q : 1;
+    }
+
+    function recalcOrderItemForm() {
+      var itemSel = document.getElementById("itemId");
+      var qtyEl = document.getElementById("quantity");
+      var priceEl = document.getElementById("display-price");
+      var lineEl = document.getElementById("display-line-total");
+      if (!itemSel || !qtyEl || !priceEl || !lineEl) return;
+
+      var it = getItemById(itemSel.value);
+      var unit = it != null ? Number(it.price) : NaN;
+      var qty = normalizeQty(qtyEl.value);
+      if (qtyEl.value !== String(qty)) qtyEl.value = String(qty);
+
+      priceEl.textContent = Number.isFinite(unit) ? formatMoney(unit) : "—";
+      var line = Number.isFinite(unit) ? unit * qty : NaN;
+      lineEl.textContent = Number.isFinite(line) ? formatMoney(line) : "—";
+    }
+
+    window.dataReady.then(function () {
+      var params = new URLSearchParams(window.location.search);
+      var id = params.get("id");
+      var row = AppUtils.findById(AppData.orderItems, "orderItemId", id);
+      if (!row) {
+        var err = document.getElementById("err-not-found");
+        err.textContent =
+          "Order item not found for id: " + (id != null ? id : "(missing)");
+        err.classList.remove("hidden");
+        return;
+      }
+
+      var ordersDd = AppData.orders.map(function (o) {
+        return {
+          orderId: o.orderId,
+          label: AppUtils.orderItemOrderLabel(o),
+        };
+      });
+
+      var tpl = Handlebars.compile(
+        document.getElementById("tpl-order-item-edit").innerHTML
+      );
+      document.getElementById("form-order-item").innerHTML = tpl({
+        row: row,
+        orders: ordersDd,
+        items: AppData.items,
+      });
+      document.getElementById("form-wrap").classList.remove("hidden");
+
+      ["orderId", "itemId"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener("change", recalcOrderItemForm);
+      });
+      document.getElementById("quantity").addEventListener("input", recalcOrderItemForm);
+      recalcOrderItemForm();
+
+      document.getElementById("form-order-item").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var fd = new FormData(e.target);
+        var obj = {};
+        fd.forEach(function (v, k) {
+          obj[k] = k === "quantity" ? Number(v) : v;
+        });
+        obj.orderItemId = row.orderItemId;
+        obj.priceDisplay = document.getElementById("display-price").textContent.trim();
+        obj.lineTotalDisplay = document.getElementById("display-line-total").textContent.trim();
+        alert("Update Order Item (no backend yet):\n\n" + JSON.stringify(obj, null, 2));
+      });
+    });
+  </script>
+</body>
+</html>

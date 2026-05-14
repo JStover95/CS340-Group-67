@@ -3,13 +3,21 @@
  * Marks the active entity based on pathname (matches any page for that entity).
  */
 (function () {
-  var ENTITY_FILES = ["artists", "genres", "customers", "items", "orders"];
+  var ENTITY_FILES = [
+    "artists",
+    "genres",
+    "customers",
+    "items",
+    "orders",
+    "order-items",
+  ];
   var LABELS = {
     artists: "Artists",
     genres: "Genres",
     customers: "Customers",
     items: "Items",
     orders: "Orders",
+    "order-items": "Order Items",
   };
 
   function getActiveSlug() {

@@ -103,5 +103,25 @@
       if (!c) return "";
       return c.firstName + " " + c.lastName;
     },
+    /**
+     * Order label for Order Items UI: `<customer email>-<order timestamp>`.
+     * @param {object} order — row from AppData.orders (orderTimestamp normalized in loader)
+     */
+    orderItemOrderLabel: function (order) {
+      if (!order) return "—";
+      var c = AppUtils.findById(
+        window.AppData.customers,
+        "customerId",
+        order.customerId
+      );
+      var email = c && c.email ? c.email : "?";
+      var ts =
+        order.orderTimestamp != null
+          ? order.orderTimestamp
+          : order.timestamp != null
+            ? order.timestamp
+            : "?";
+      return email + "-" + ts;
+    },
   };
 })();
