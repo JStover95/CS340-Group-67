@@ -41,7 +41,7 @@
       {{#each genres}}
       <tr class="hover:bg-gray-50">
         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{genreId}}</td>
-        <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{{name}}</td>
+        <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900"><a href="./genres-edit.html?id={{genreId}}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{name}}</a></td>
         <td class="max-w-xl px-4 py-3 text-sm text-gray-600">{{#if description}}{{description}}{{else}}—{{/if}}</td>
         <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
           <a href="./genres-edit.html?id={{genreId}}" class="mr-2 inline-flex rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 shadow-sm hover:bg-gray-50">Edit</a>
