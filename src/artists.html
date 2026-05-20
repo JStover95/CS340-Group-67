@@ -42,7 +42,7 @@
       {{#each artists}}
       <tr class="hover:bg-gray-50">
         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{artistId}}</td>
-        <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{{name}}</td>
+        <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900"><a href="./genres-edit.html?id={{genreId}}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{name}}</a></td>
         <td class="px-4 py-3 text-sm text-gray-600">{{#if country}}{{country}}{{else}}—{{/if}}</td>
         <td class="max-w-md px-4 py-3 text-sm text-gray-600">{{#if bio}}{{bio}}{{else}}—{{/if}}</td>
         <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
