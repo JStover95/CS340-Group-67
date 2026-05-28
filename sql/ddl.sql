@@ -33,8 +33,8 @@ OR REPLACE TABLE Orders (
     orderTimestamp datetime NOT NULL,
     orderTotal decimal(10, 2) NOT NULL,
     PRIMARY KEY (orderId),
-    FOREIGN KEY (customerId) REFERENCES Customers (customerId) ON DELETE RESTRICT,
-    FOREIGN KEY (statusId) REFERENCES Statuses (statusId) ON DELETE RESTRICT
+    FOREIGN KEY (customerId) REFERENCES Customers (customerId) ON DELETE CASCADE,
+    FOREIGN KEY (statusId) REFERENCES Statuses (statusId) ON DELETE CASCADE
 );
 
 -- Create the Artists table
@@ -68,8 +68,8 @@ OR REPLACE TABLE Items (
     artistId int NOT NULL,
     genreId int NOT NULL,
     PRIMARY KEY (itemId),
-    FOREIGN KEY (artistId) REFERENCES Artists (artistId) ON DELETE RESTRICT,
-    FOREIGN KEY (genreId) REFERENCES Genres (genreId) ON DELETE RESTRICT
+    FOREIGN KEY (artistId) REFERENCES Artists (artistId) ON DELETE CASCADE,
+    FOREIGN KEY (genreId) REFERENCES Genres (genreId) ON DELETE CASCADE
 );
 
 -- Create the OrderItems table
@@ -83,7 +83,7 @@ OR REPLACE TABLE OrderItems (
     lineTotal decimal(10, 2) NOT NULL,
     PRIMARY KEY (orderItemId),
     FOREIGN KEY (orderId) REFERENCES Orders (orderId) ON DELETE CASCADE,
-    FOREIGN KEY (itemId) REFERENCES Items (itemId) ON DELETE RESTRICT
+    FOREIGN KEY (itemId) REFERENCES Items (itemId) ON DELETE CASCADE
 );
 
 -- Insert into the Customers table
