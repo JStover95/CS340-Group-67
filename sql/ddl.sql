@@ -5,8 +5,7 @@ Ryan Matta, Developer
 Team Jess & Ryan
  */
 -- Create the Customers table
-CREATE
-OR REPLACE TABLE Customers (
+CREATE TABLE Customers (
     customerId int NOT NULL AUTO_INCREMENT,
     firstName varchar(100) NOT NULL,
     lastName varchar(100) NOT NULL,
@@ -16,8 +15,7 @@ OR REPLACE TABLE Customers (
 );
 
 -- Create the Statuses table
-CREATE
-OR REPLACE TABLE Statuses (
+CREATE TABLE Statuses (
     statusId int NOT NULL AUTO_INCREMENT,
     statusCode varchar(50) NOT NULL,
     description varchar(1000) NOT NULL,
@@ -25,8 +23,7 @@ OR REPLACE TABLE Statuses (
 );
 
 -- Create the Orders table
-CREATE
-OR REPLACE TABLE Orders (
+CREATE TABLE Orders (
     orderId int NOT NULL AUTO_INCREMENT,
     customerId int NOT NULL,
     statusId int NOT NULL,
@@ -38,8 +35,7 @@ OR REPLACE TABLE Orders (
 );
 
 -- Create the Artists table
-CREATE
-OR REPLACE TABLE Artists (
+CREATE TABLE Artists (
     artistId int NOT NULL AUTO_INCREMENT,
     name varchar(255) NOT NULL,
     country varchar(100),
@@ -48,8 +44,7 @@ OR REPLACE TABLE Artists (
 );
 
 -- Create the Genres table
-CREATE
-OR REPLACE TABLE Genres (
+CREATE TABLE Genres (
     genreId int NOT NULL AUTO_INCREMENT,
     name varchar(100) NOT NULL,
     description varchar(1000),
@@ -57,8 +52,7 @@ OR REPLACE TABLE Genres (
 );
 
 -- Create the Items table
-CREATE
-OR REPLACE TABLE Items (
+CREATE TABLE Items (
     itemId int NOT NULL AUTO_INCREMENT,
     type enum ('record', 'CD') NOT NULL,
     title varchar(255) NOT NULL,
@@ -73,8 +67,7 @@ OR REPLACE TABLE Items (
 );
 
 -- Create the OrderItems table
-CREATE
-OR REPLACE TABLE OrderItems (
+CREATE TABLE OrderItems (
     orderItemId int NOT NULL AUTO_INCREMENT,
     orderId int NOT NULL,
     itemId int NOT NULL,
