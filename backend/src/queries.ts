@@ -29,7 +29,6 @@ export const queries = {
       firstName,
       lastName,
       email,
-      password,
       shippingAddress
     FROM Customers;
   `,
@@ -53,7 +52,7 @@ export const queries = {
       Customers.firstName,
       Customers.lastName,
       Statuses.statusCode,
-      Orders.timestamp,
+      Orders.orderTimestamp,
       Orders.orderTotal
     FROM Orders
     JOIN Customers ON Orders.customerId = Customers.customerId
