@@ -23,6 +23,13 @@
  - Prompted to add functionality to the delete button on each read table so that when the user confirms deletion, the item is removed from the table.
  - No underlying data should be modified.
  - It is expected that the sample data should be restored on page refresh.
+
+ Date: 05/28/2026
+ AI tools were used to generate this code (Cursor Codex 5.3).
+
+ Summary of prompts:
+ - Prompted to connect list pages to backend GET/DELETE endpoints instead of local JSON data.
+ - Prompted to refresh the table after successful delete and alert on unsuccessful delete.
 -->
 
 <!DOCTYPE html>
@@ -34,6 +41,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
   <script src="./js/data.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -88,23 +96,26 @@
   </script>
 
   <script>
-    window.dataReady.then(function () {
+    (function () {
       var tbody = document.getElementById("orders-body");
-      var tpl = Handlebars.compile(document.getElementById("tpl-orders-rows").innerHTML);
-      function enrich() {
-        return AppData.orders.map(function (o) {
-          var c = AppUtils.findById(AppData.customers, "customerId", o.customerId);
-          var s = AppUtils.findById(AppData.statuses, "statusId", o.statusId);
-          return Object.assign({}, o, {
-            customerName: c ? AppUtils.customerShortName(c) : "—",
-            statusCode: s ? s.statusCode : "—",
+      var tpl = Handlebars.compile(
+        document.getElementById("tpl-orders-rows").innerHTML
+      );
+
+      function render(orders) {
+        tbody.innerHTML = tpl({ orders: orders });
+      }
+
+      function load() {
+        return AppApi.fetchOrders()
+          .then(render)
+          .catch(function () {
+            alert("Failed to load orders from the server.");
+            render([]);
           });
-        });
       }
-      function render() {
-        tbody.innerHTML = tpl({ orders: enrich() });
-      }
-      render();
+
+      load();
 
       tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
@@ -116,10 +127,16 @@
           )
         )
           return;
-        if (AppUiMutations.removeOrderInMemory(id)) render();
-        // TODO: Backend DELETE — cascades or deletes related OrderItems as required by API/DB schema.
+        AppApi.deleteOrder(id)
+          .then(function (result) {
+            if (result.ok) return load();
+            alert(result.message || "Resource not found.");
+          })
+          .catch(function () {
+            alert("Failed to delete order.");
+          });
       });
-    });
+    })();
   </script>
 </body>
 </html>

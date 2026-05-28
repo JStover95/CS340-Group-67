@@ -22,6 +22,7 @@
  * - Prompted to build a backend-only integration layer for frontend consumption later, without wiring frontend calls yet.
  */
 
+import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { pool } from "./db.js";
@@ -32,6 +33,7 @@ dotenv.config();
 const app = express();
 const port = Number(process.env.PORT || 3001);
 
+app.use(cors());
 app.use(express.json());
 
 function parseId(value: string): number | null {

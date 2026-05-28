@@ -23,6 +23,13 @@
  - Prompted to add functionality to the delete button on each read table so that when the user confirms deletion, the item is removed from the table.
  - No underlying data should be modified.
  - It is expected that the sample data should be restored on page refresh.
+
+ Date: 05/28/2026
+ AI tools were used to generate this code (Cursor Codex 5.3).
+
+ Summary of prompts:
+ - Prompted to connect list pages to backend GET/DELETE endpoints instead of local JSON data.
+ - Prompted to refresh the table after successful delete and alert on unsuccessful delete.
 -->
 
 <!DOCTYPE html>
@@ -34,6 +41,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
   <script src="./js/data.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -69,9 +77,9 @@
       {{#each artists}}
       <tr class="hover:bg-gray-50">
         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{artistId}}</td>
-        <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900"><a href="./genres-edit.html?id={{genreId}}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{name}}</a></td>
-        <td class="px-4 py-3 text-sm text-gray-600">{{#if country}}{{country}}{{else}}—{{/if}}</td>
-        <td class="max-w-md px-4 py-3 text-sm text-gray-600">{{#if bio}}{{bio}}{{else}}—{{/if}}</td>
+        <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900"><a href="./artists-edit.html?id={{artistId}}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{name}}</a></td>
+        <td class="px-4 py-3 text-sm text-gray-600">{{country}}</td>
+        <td class="max-w-md px-4 py-3 text-sm text-gray-600">{{bio}}</td>
         <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
           <a href="./artists-edit.html?id={{artistId}}" class="mr-2 inline-flex rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 shadow-sm hover:bg-gray-50">Edit</a>
           <button type="button" class="btn-delete text-red-600 hover:text-red-800" data-artist-id="{{artistId}}">Delete</button>
@@ -86,14 +94,26 @@
   </script>
 
   <script>
-    window.dataReady.then(function () {
+    (function () {
       var tbody = document.getElementById("artists-body");
-      var tplSource = document.getElementById("tpl-artists-rows").innerHTML;
-      var templ = Handlebars.compile(tplSource);
-      function render() {
-        tbody.innerHTML = templ({ artists: AppData.artists });
+      var tpl = Handlebars.compile(
+        document.getElementById("tpl-artists-rows").innerHTML
+      );
+
+      function render(artists) {
+        tbody.innerHTML = tpl({ artists: artists });
       }
-      render();
+
+      function load() {
+        return AppApi.fetchArtists()
+          .then(render)
+          .catch(function () {
+            alert("Failed to load artists from the server.");
+            render([]);
+          });
+      }
+
+      load();
 
       tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
@@ -105,10 +125,16 @@
           )
         )
           return;
-        if (AppUiMutations.removeByIdKey("artists", "artistId", id)) render();
-        // TODO: Call backend DELETE when available. FK: deleting Artists may fail if Items reference this artist — surface constraint errors gracefully.
+        AppApi.deleteArtist(id)
+          .then(function (result) {
+            if (result.ok) return load();
+            alert(result.message || "Resource not found.");
+          })
+          .catch(function () {
+            alert("Failed to delete artist.");
+          });
       });
-    });
+    })();
   </script>
 </body>
 </html>

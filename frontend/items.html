@@ -23,6 +23,13 @@
  - Prompted to add functionality to the delete button on each read table so that when the user confirms deletion, the item is removed from the table.
  - No underlying data should be modified.
  - It is expected that the sample data should be restored on page refresh.
+
+ Date: 05/28/2026
+ AI tools were used to generate this code (Cursor Codex 5.3).
+
+ Summary of prompts:
+ - Prompted to connect list pages to backend GET/DELETE endpoints instead of local JSON data.
+ - Prompted to refresh the table after successful delete and alert on unsuccessful delete.
 -->
 
 <!DOCTYPE html>
@@ -34,6 +41,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
   <script src="./js/data.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -76,8 +84,8 @@
         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{type}}</td>
         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{title}}</td>
         <td class="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">{{currency price}}</td>
-        <td class="max-w-xs px-4 py-3 text-sm text-gray-600">{{#if description}}{{description}}{{else}}—{{/if}}</td>
-        <td class="max-w-[12rem] truncate px-4 py-3 text-xs text-gray-600 font-mono">{{#if image}}{{image}}{{else}}—{{/if}}</td>
+        <td class="max-w-xs px-4 py-3 text-sm text-gray-600">{{description}}</td>
+        <td class="max-w-[12rem] truncate px-4 py-3 text-xs text-gray-600 font-mono">{{image}}</td>
         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-800">{{artistName}}</td>
         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-800">{{genreName}}</td>
         <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
@@ -94,23 +102,26 @@
   </script>
 
   <script>
-    window.dataReady.then(function () {
+    (function () {
       var tbody = document.getElementById("items-body");
-      var tpl = Handlebars.compile(document.getElementById("tpl-items-rows").innerHTML);
-      function enrich() {
-        return AppData.items.map(function (item) {
-          var a = AppUtils.findById(AppData.artists, "artistId", item.artistId);
-          var g = AppUtils.findById(AppData.genres, "genreId", item.genreId);
-          return Object.assign({}, item, {
-            artistName: a ? a.name : "—",
-            genreName: g ? g.name : "—",
+      var tpl = Handlebars.compile(
+        document.getElementById("tpl-items-rows").innerHTML
+      );
+
+      function render(items) {
+        tbody.innerHTML = tpl({ items: items });
+      }
+
+      function load() {
+        return AppApi.fetchItems()
+          .then(render)
+          .catch(function () {
+            alert("Failed to load items from the server.");
+            render([]);
           });
-        });
       }
-      function render() {
-        tbody.innerHTML = tpl({ items: enrich() });
-      }
-      render();
+
+      load();
 
       tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
@@ -122,10 +133,16 @@
           )
         )
           return;
-        if (AppUiMutations.removeByIdKey("items", "itemId", id)) render();
-        // TODO: Backend DELETE — FK if OrderItems reference this Item.
+        AppApi.deleteItem(id)
+          .then(function (result) {
+            if (result.ok) return load();
+            alert(result.message || "Resource not found.");
+          })
+          .catch(function () {
+            alert("Failed to delete item.");
+          });
       });
-    });
+    })();
   </script>
 </body>
 </html>

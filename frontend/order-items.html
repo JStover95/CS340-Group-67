@@ -16,6 +16,13 @@
  - Prompted to add functionality to the delete button on each read table so that when the user confirms deletion, the item is removed from the table.
  - No underlying data should be modified.
  - It is expected that the sample data should be restored on page refresh.
+
+ Date: 05/28/2026
+ AI tools were used to generate this code (Cursor Codex 5.3).
+
+ Summary of prompts:
+ - Prompted to connect list pages to backend GET/DELETE endpoints instead of local JSON data.
+ - Prompted to refresh the table after successful delete and alert on unsuccessful delete.
 -->
 
 <!DOCTYPE html>
@@ -27,6 +34,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
   <script src="./js/data.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -87,32 +95,26 @@
   </script>
 
   <script>
-    window.dataReady.then(function () {
+    (function () {
       var tbody = document.getElementById("order-items-body");
       var tpl = Handlebars.compile(
         document.getElementById("tpl-order-items-rows").innerHTML
       );
-      function buildRows() {
-        return AppData.orderItems.map(function (oi) {
-          var order = AppUtils.findById(AppData.orders, "orderId", oi.orderId);
-          var item = AppUtils.findById(AppData.items, "itemId", oi.itemId);
-          var unit = item != null ? Number(item.price) : NaN;
-          var qty = Number(oi.quantity);
-          var derivedPrice = Number.isFinite(unit) ? unit : null;
-          var derivedLineTotal =
-            Number.isFinite(unit) && Number.isFinite(qty) ? unit * qty : null;
-          return Object.assign({}, oi, {
-            orderLabel: AppUtils.orderItemOrderLabel(order),
-            itemTitle: item ? item.title : "—",
-            derivedPrice: derivedPrice,
-            derivedLineTotal: derivedLineTotal,
+
+      function render(rows) {
+        tbody.innerHTML = tpl({ rows: rows });
+      }
+
+      function load() {
+        return AppApi.fetchOrderItems()
+          .then(render)
+          .catch(function () {
+            alert("Failed to load order items from the server.");
+            render([]);
           });
-        });
       }
-      function render() {
-        tbody.innerHTML = tpl({ rows: buildRows() });
-      }
-      render();
+
+      load();
 
       tbody.addEventListener("click", function (e) {
         var btn = e.target.closest(".btn-delete");
@@ -124,10 +126,16 @@
           )
         )
           return;
-        if (AppUiMutations.removeByIdKey("orderItems", "orderItemId", id)) render();
-        // TODO: Backend DELETE for OrderItems when API exists.
+        AppApi.deleteOrderItem(id)
+          .then(function (result) {
+            if (result.ok) return load();
+            alert(result.message || "Resource not found.");
+          })
+          .catch(function () {
+            alert("Failed to delete order item.");
+          });
       });
-    });
+    })();
   </script>
 </body>
 </html>
