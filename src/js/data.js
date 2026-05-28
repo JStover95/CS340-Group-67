@@ -153,6 +153,14 @@
   /**
    * In-memory-only mutations for client-side list deletes. JSON on disk is unchanged;
    * a full page reload re-fetches sample data.
+   * 
+   * Date: 05/13/2026
+   * AI tools were used to generate this code (Cursor Composer 2).
+   *
+   * Summary of prompts:
+   * - Prompted to add functionality to the delete button on each read table so that when the user confirms deletion, the item is removed from the table.
+   * - No underlying data should be modified.
+   * - It is expected that the sample data should be restored on page refresh.
    */
   window.AppUiMutations = {
     removeByIdKey: function (collectionKey, idKey, id) {
