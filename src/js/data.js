@@ -1,3 +1,22 @@
+/** Date: 05/06/2026
+ * AI tools were used to generate this code (Cursor Composer 2).
+ *
+ * Summary of prompts:
+ * - Prompted for design of an administrator-facing frontend specification in `frontend-spec.md` using `database-outline.md` as the source of schema and relationship requirements.
+ * - Prompted for enforcement of scope constraints: VPN-only access, no authentication/session state, no backend requests, and alert-based no-op submit behavior.
+ * - Prompted for coverage of full CRUD UI requirements for `Artists`, `Genres`, `Customers`, `Items`, and `Orders`, with `Statuses` excluded from CRUD management.
+ * - Prompted for clarification and confirmation of UI/UX decisions, including MPA architecture, `Items.type` radio inputs, `Customers.shippingAddress` textarea usage, and header text selection.
+ * - Prompted for inclusion of relationship-driven UI behavior: artist/genre dropdowns on items, customer/status dropdowns on orders, and inline editable order items table on order create/edit pages.
+ * - Prompted for treatment of derived/display-only order fields (`orderTimestamp`, `orderTotal`, `OrderItems.price`, `OrderItems.lineTotal`) as non-editable with distinctive styling.
+ * - Prompted for read-table display normalization from IDs to human-readable values (customer name/status code in orders, artist/genre names in items).
+ * - Prompted for delete confirmation behavior via user confirmation dialogs, with FK/cascade warnings deferred out of scope but documented for future backend integration.
+ * - Prompted for explicit empty-state handling with `No records found.` messaging in list tables and no image preview requirement on item edit.
+ * - Prompted for implementation of the approved MPA plan end-to-end, with fake data loaded from `data/*.json` for read/edit rendering only, and create/update/delete behavior retained as no-op alert flows.
+ * - Prompted for todo-driven execution discipline: existing plan todos marked in progress/completed sequentially without recreating plan tasks.
+ * - Prompted for brief task-status communication when the smoke-test local server job ended in aborted state, with no further action required.
+ * - Prompted for final concise recap request for conversation prompts and requirement discussion points.
+ */
+
 /**
  * Loads mock JSON under /data into window.AppData.
  * Registers Handlebars helpers when Handlebars is available.
