@@ -15,6 +15,13 @@
  * - Prompted for todo-driven execution discipline: existing plan todos marked in progress/completed sequentially without recreating plan tasks.
  * - Prompted for brief task-status communication when the smoke-test local server job ended in aborted state, with no further action required.
  * - Prompted for final concise recap request for conversation prompts and requirement discussion points.
+ *
+ * Date: 05/28/2026
+ * AI tools were used to generate this code (Cursor Codex 5.3).
+ *
+ * Summary of prompts:
+ * - Prompted to add a reset button at the bottom of the left navigation that calls `POST /reset`.
+ * - Prompted to refresh the page on success and show an alert on failure.
  */
 
 /**
@@ -63,6 +70,8 @@
     }
 
     if (navEl) {
+      navEl.classList.add("flex", "flex-col");
+
       var linksHtml = ENTITY_FILES.map(function (slug) {
         var active = slug === activeSlug;
         var cls =
@@ -81,10 +90,56 @@
         );
       }).join("");
       navEl.innerHTML =
-        '<div class="p-4 space-y-1 border-b border-gray-200">' +
+        '<div class="flex min-h-0 flex-1 flex-col">' +
+        '<div class="flex-1 overflow-y-auto p-4 space-y-1">' +
         linksHtml +
+        "</div>" +
+        '<div class="shrink-0 border-t border-gray-200 p-4">' +
+        '<button type="button" id="btn-reset-db" class="w-full rounded-md border border-red-700 bg-red-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">' +
+        "Reset Database" +
+        "</button>" +
+        "</div>" +
         "</div>";
+
+      var resetBtn = document.getElementById("btn-reset-db");
+      if (resetBtn) {
+        resetBtn.addEventListener("click", onResetDatabaseClick);
+      }
     }
+  }
+
+  function onResetDatabaseClick() {
+    if (
+      !confirm(
+        "Reset the database to initial sample data? This cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    var resetPromise =
+      window.AppApi && window.AppApi.resetDatabase
+        ? window.AppApi.resetDatabase()
+        : fetch("http://localhost:3001/reset", { method: "POST" }).then(
+            function (res) {
+              if (!res.ok) {
+                return res.json().then(function (body) {
+                  throw new Error(
+                    (body && body.message) || "Failed to reset database."
+                  );
+                });
+              }
+              return res.json();
+            }
+          );
+
+    resetPromise
+      .then(function () {
+        window.location.reload();
+      })
+      .catch(function (err) {
+        alert(err.message || "Failed to reset database.");
+      });
   }
 
   if (document.readyState === "loading") {

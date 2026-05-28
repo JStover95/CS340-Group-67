@@ -5,6 +5,7 @@
  * - Prompted to connect list pages to the backend GET and DELETE endpoints instead of `frontend/data/` JSON files.
  * - Prompted to refresh list tables after successful delete and show an alert warning when delete is unsuccessful.
  * - Prompted to use empty strings for table columns when backend rows omit expected display fields.
+ * - Prompted to add `resetDatabase()` for `POST /reset` used by the navigation reset button.
  */
 
 (function () {
@@ -144,6 +145,19 @@
     },
     deleteOrderItem: function (id) {
       return deleteResource("order-item", id);
+    },
+
+    resetDatabase: function () {
+      return fetch(API_BASE + "/reset", { method: "POST" }).then(function (res) {
+        if (!res.ok) {
+          return res.json().then(function (body) {
+            throw new Error(
+              (body && body.message) || "Failed to reset database."
+            );
+          });
+        }
+        return res.json();
+      });
     },
   };
 })();
