@@ -125,6 +125,12 @@
     /**
      * Order label for Order Items UI: `<customer email>-<order timestamp>`.
      * @param {object} order — row from AppData.orders (orderTimestamp normalized in loader)
+     *
+     * Date: 05/13/2026
+     * AI tools were used to generate this code (Cursor Composer 2).
+     *
+     * Summary of prompts:
+     * - Prompted to add read, create, edit, and delete pages for OrderItems. This is in addition to the OrderItems table in the Orders create/edit pages.
      */
     orderItemOrderLabel: function (order) {
       if (!order) return "—";
