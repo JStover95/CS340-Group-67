@@ -2,6 +2,14 @@
  * AI tools were used to generate this code (Cursor Codex 5.3).
  *
  * Summary of prompts:
+ * - Prompted to add `POST /reset` that calls stored procedure `reset_db()`.
+ * - Prompted to return `200` with `{ message: "Database successfully reset." }` on success.
+ */
+
+/** Date: 05/28/2026
+ * AI tools were used to generate this code (Cursor Codex 5.3).
+ *
+ * Summary of prompts:
  * - Prompted to add `DELETE <slug>/{id}` endpoints for each table.
  * - Prompted to call `delete_<slug>` stored procedures and return `204` on successful delete or `404` with `{ message: "Resource not found." }` when no row was deleted.
  */
@@ -121,6 +129,11 @@ app.get("/order-item/", async (_req, res) => {
 
 app.delete("/order-item/:id", async (req, res) => {
   return handleDelete("delete_order_item", req.params.id, res);
+});
+
+app.post("/reset", async (_req, res) => {
+  await pool.query("CALL reset_db()");
+  return res.status(200).json({ message: "Database successfully reset." });
 });
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
