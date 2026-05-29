@@ -835,8 +835,6 @@ VALUES
         52.00
     );
 -- Stored procedures for delete operations
-Just this:
-sql-- Stored procedures for delete operations
 DELIMITER //
 
 CREATE PROCEDURE delete_artist(IN p_id INT)
