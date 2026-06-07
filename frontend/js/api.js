@@ -9,7 +9,7 @@
  */
 
 (function () {
-  var API_BASE = "http://localhost:3001";
+  var API_BASE = "http://classwork.engr.oregonstate.edu:3712";
 
   function emptyStr(value) {
     return value == null ? "" : String(value);

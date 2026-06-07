@@ -120,7 +120,7 @@
     var resetPromise =
       window.AppApi && window.AppApi.resetDatabase
         ? window.AppApi.resetDatabase()
-        : fetch("http://localhost:3001/reset", { method: "POST" }).then(
+        : fetch("http://classwork.engr.oregonstate.edu:3712/reset", { method: "POST" }).then(
             function (res) {
               if (!res.ok) {
                 return res.json().then(function (body) {
