@@ -52,6 +52,10 @@
     "order-items": "Order Items",
   };
 
+  /**
+   * Derives the active nav slug from the current page filename.
+   * @returns {string|null}
+   */
   function getActiveSlug() {
     var path =
       typeof window.location !== "undefined" ? window.location.pathname : "";
@@ -63,6 +67,7 @@
     return null;
   }
 
+  /** Renders the site header, sidebar links, and reset-database button. */
   function inject() {
     var headerEl = document.getElementById("site-header");
     var navEl = document.getElementById("site-nav");
@@ -114,6 +119,7 @@
     }
   }
 
+  /** Confirms and calls AppApi.resetDatabase(), then reloads or alerts on failure. */
   function onResetDatabaseClick() {
     if (
       !confirm(

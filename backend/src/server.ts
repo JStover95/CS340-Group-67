@@ -45,32 +45,38 @@ const port = Number(process.env.PORT || 3001);
 app.use(cors());
 app.use(express.json());
 
+/** Parses a route id param; returns null when not a positive integer. */
 function parseId(value: string): number | null {
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+/** Trims a string value; empty strings become null. */
 function nullableString(value: unknown): string | null {
   if (value == null) return null;
   const trimmed = String(value).trim();
   return trimmed === "" ? null : trimmed;
 }
 
+/** Returns a trimmed non-empty string, or null when missing/blank. */
 function requiredString(value: unknown, field: string): string | null {
   const result = nullableString(value);
   return result == null ? null : result;
 }
 
+/** Parses a finite decimal number, or null when invalid. */
 function parseDecimal(value: unknown): number | null {
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
 }
 
+/** Parses a positive integer, or null when invalid. */
 function parsePositiveInt(value: unknown): number | null {
   const num = Number(value);
   return Number.isInteger(num) && num > 0 ? num : null;
 }
 
+/** Normalizes a timestamp to MySQL `YYYY-MM-DD HH:MM:SS`, or null when invalid. */
 function toMySqlDateTime(value: unknown): string | null {
   if (value == null) return null;
 
@@ -91,6 +97,7 @@ function toMySqlDateTime(value: unknown): string | null {
   return str;
 }
 
+/** Reads the first scalar value from a mysql2 stored-procedure result set. */
 function getProcedureScalar(rows: unknown): number {
   if (!Array.isArray(rows) || rows.length === 0) {
     return 0;
@@ -108,20 +115,24 @@ function getProcedureScalar(rows: unknown): number {
   return Number.isFinite(scalar) ? scalar : 0;
 }
 
+/** Returns rows affected from a delete/update stored-procedure result. */
 function getRowCountFromProcedureResult(rows: unknown): number {
   return getProcedureScalar(rows);
 }
 
+/** Returns the insert id from a create stored-procedure result, or null. */
 function getInsertIdFromProcedureResult(rows: unknown): number | null {
   const insertId = getProcedureScalar(rows);
   return insertId > 0 ? insertId : null;
 }
 
+/** Executes a stored procedure with positional arguments. */
 function callProcedure(name: string, args: unknown[]) {
   const placeholders = args.map(() => "?").join(", ");
   return pool.query(`CALL ${name}(${placeholders})`, args);
 }
 
+/** Shared handler for DELETE routes that call a delete_* stored procedure. */
 async function handleDelete(
   procedureName: string,
   idParam: string,
@@ -143,6 +154,7 @@ async function handleDelete(
   return res.status(404).json({ message: "Resource not found." });
 }
 
+/** Shared handler for POST routes that call a create_* stored procedure. */
 async function handleCreate(
   procedureName: string,
   args: unknown[],
@@ -158,6 +170,7 @@ async function handleCreate(
   return res.status(500).json({ error: "Failed to create resource." });
 }
 
+/** Shared handler for PUT routes that call an update_* stored procedure. */
 async function handleUpdate(
   procedureName: string,
   args: unknown[],
@@ -173,11 +186,13 @@ async function handleUpdate(
   return res.status(404).json({ message: "Resource not found." });
 }
 
+/** GET /artist/ — List all artists. */
 app.get("/artist/", async (_req, res) => {
   const [rows] = await pool.query(queries.artists);
   return res.status(200).json(rows);
 });
 
+/** POST /artist/ — Create an artist via `create_artist`. */
 app.post("/artist/", async (req, res) => {
   const name = requiredString(req.body.name, "name");
   if (name == null) {
@@ -191,6 +206,7 @@ app.post("/artist/", async (req, res) => {
   ], res);
 });
 
+/** PUT /artist/:id — Update an artist via `update_artist`. */
 app.put("/artist/:id", async (req, res) => {
   const id = parseId(req.params.id);
   const name = requiredString(req.body.name, "name");
@@ -206,15 +222,18 @@ app.put("/artist/:id", async (req, res) => {
   ], res);
 });
 
+/** DELETE /artist/:id — Delete an artist via `delete_artist`. */
 app.delete("/artist/:id", async (req, res) => {
   return handleDelete("delete_artist", req.params.id, res);
 });
 
+/** GET /genre/ — List all genres. */
 app.get("/genre/", async (_req, res) => {
   const [rows] = await pool.query(queries.genres);
   return res.status(200).json(rows);
 });
 
+/** POST /genre/ — Create a genre via `create_genre`. */
 app.post("/genre/", async (req, res) => {
   const name = requiredString(req.body.name, "name");
   if (name == null) {
@@ -224,6 +243,7 @@ app.post("/genre/", async (req, res) => {
   return handleCreate("create_genre", [name, nullableString(req.body.description)], res);
 });
 
+/** PUT /genre/:id — Update a genre via `update_genre`. */
 app.put("/genre/:id", async (req, res) => {
   const id = parseId(req.params.id);
   const name = requiredString(req.body.name, "name");
@@ -234,15 +254,18 @@ app.put("/genre/:id", async (req, res) => {
   return handleUpdate("update_genre", [id, name, nullableString(req.body.description)], res);
 });
 
+/** DELETE /genre/:id — Delete a genre via `delete_genre`. */
 app.delete("/genre/:id", async (req, res) => {
   return handleDelete("delete_genre", req.params.id, res);
 });
 
+/** GET /customer/ — List all customers. */
 app.get("/customer/", async (_req, res) => {
   const [rows] = await pool.query(queries.customers);
   return res.status(200).json(rows);
 });
 
+/** POST /customer/ — Create a customer via `create_customer`. */
 app.post("/customer/", async (req, res) => {
   const firstName = requiredString(req.body.firstName, "firstName");
   const lastName = requiredString(req.body.lastName, "lastName");
@@ -261,6 +284,7 @@ app.post("/customer/", async (req, res) => {
   ], res);
 });
 
+/** PUT /customer/:id — Update a customer via `update_customer`. */
 app.put("/customer/:id", async (req, res) => {
   const id = parseId(req.params.id);
   const firstName = requiredString(req.body.firstName, "firstName");
@@ -281,15 +305,18 @@ app.put("/customer/:id", async (req, res) => {
   ], res);
 });
 
+/** DELETE /customer/:id — Delete a customer via `delete_customer`. */
 app.delete("/customer/:id", async (req, res) => {
   return handleDelete("delete_customer", req.params.id, res);
 });
 
+/** GET /status/ — List all order statuses (for dropdowns). */
 app.get("/status/", async (_req, res) => {
   const [rows] = await pool.query(queries.statuses);
   return res.status(200).json(rows);
 });
 
+/** POST /status/ — Create a status via `create_status`. */
 app.post("/status/", async (req, res) => {
   const statusCode = requiredString(req.body.statusCode, "statusCode");
   const description = requiredString(req.body.description, "description");
@@ -300,6 +327,7 @@ app.post("/status/", async (req, res) => {
   return handleCreate("create_status", [statusCode, description], res);
 });
 
+/** PUT /status/:id — Update a status via `update_status`. */
 app.put("/status/:id", async (req, res) => {
   const id = parseId(req.params.id);
   const statusCode = requiredString(req.body.statusCode, "statusCode");
@@ -311,15 +339,18 @@ app.put("/status/:id", async (req, res) => {
   return handleUpdate("update_status", [id, statusCode, description], res);
 });
 
+/** DELETE /status/:id — Delete a status via `delete_status`. */
 app.delete("/status/:id", async (req, res) => {
   return handleDelete("delete_status", req.params.id, res);
 });
 
+/** GET /item/ — List all items with artist and genre names. */
 app.get("/item/", async (_req, res) => {
   const [rows] = await pool.query(queries.items);
   return res.status(200).json(rows);
 });
 
+/** POST /item/ — Create an item via `create_item`. */
 app.post("/item/", async (req, res) => {
   const type = requiredString(req.body.type, "type");
   const title = requiredString(req.body.title, "title");
@@ -342,6 +373,7 @@ app.post("/item/", async (req, res) => {
   ], res);
 });
 
+/** PUT /item/:id — Update an item via `update_item`. */
 app.put("/item/:id", async (req, res) => {
   const id = parseId(req.params.id);
   const type = requiredString(req.body.type, "type");
@@ -366,10 +398,12 @@ app.put("/item/:id", async (req, res) => {
   ], res);
 });
 
+/** DELETE /item/:id — Delete an item via `delete_item`. */
 app.delete("/item/:id", async (req, res) => {
   return handleDelete("delete_item", req.params.id, res);
 });
 
+/** GET /order/ — List all orders with normalized timestamps. */
 app.get("/order/", async (_req, res) => {
   const [rows] = await pool.query(queries.orders);
   const normalized = (rows as Record<string, unknown>[]).map((row) => ({
@@ -379,6 +413,7 @@ app.get("/order/", async (_req, res) => {
   return res.status(200).json(normalized);
 });
 
+/** POST /order/ — Create an order via `create_order`. */
 app.post("/order/", async (req, res) => {
   const customerId = parsePositiveInt(req.body.customerId);
   const statusId = parsePositiveInt(req.body.statusId);
@@ -398,6 +433,7 @@ app.post("/order/", async (req, res) => {
   ], res);
 });
 
+/** PUT /order/:id — Update an order via `update_order`. */
 app.put("/order/:id", async (req, res) => {
   const id = parseId(req.params.id);
   const customerId = parsePositiveInt(req.body.customerId);
@@ -424,15 +460,18 @@ app.put("/order/:id", async (req, res) => {
   ], res);
 });
 
+/** DELETE /order/:id — Delete an order via `delete_order`. */
 app.delete("/order/:id", async (req, res) => {
   return handleDelete("delete_order", req.params.id, res);
 });
 
+/** GET /order-item/ — List all order line items. */
 app.get("/order-item/", async (_req, res) => {
   const [rows] = await pool.query(queries.orderItems);
   return res.status(200).json(rows);
 });
 
+/** POST /order-item/ — Create an order line via `create_order_item`. */
 app.post("/order-item/", async (req, res) => {
   const orderId = parsePositiveInt(req.body.orderId);
   const itemId = parsePositiveInt(req.body.itemId);
@@ -453,6 +492,7 @@ app.post("/order-item/", async (req, res) => {
   ], res);
 });
 
+/** PUT /order-item/:id — Update an order line via `update_order_item`. */
 app.put("/order-item/:id", async (req, res) => {
   const id = parseId(req.params.id);
   const orderId = parsePositiveInt(req.body.orderId);
@@ -482,15 +522,18 @@ app.put("/order-item/:id", async (req, res) => {
   ], res);
 });
 
+/** DELETE /order-item/:id — Delete an order line via `delete_order_item`. */
 app.delete("/order-item/:id", async (req, res) => {
   return handleDelete("delete_order_item", req.params.id, res);
 });
 
+/** POST /reset — Reset the database to initial sample data via `reset_db()`. */
 app.post("/reset", async (_req, res) => {
   await pool.query("CALL reset_db()");
   return res.status(200).json({ message: "Database successfully reset." });
 });
 
+/** Global error handler; returns 500 JSON for unhandled exceptions. */
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
   return res.status(500).json({ error: "Internal server error" });

@@ -28,6 +28,7 @@
  */
 (function () {
   if (typeof Handlebars !== "undefined") {
+    /** Renders the `selected` attribute when two option values match. */
     Handlebars.registerHelper("selected", function (a, b) {
       var x = Number(a);
       var y = Number(b);
@@ -36,9 +37,11 @@
       }
       return String(a) === String(b) ? "selected" : "";
     });
+    /** Renders the `checked` attribute when two radio values match. */
     Handlebars.registerHelper("checked", function (a, b) {
       return String(a) === String(b) ? "checked" : "";
     });
+    /** Formats a number as USD currency for templates, or em dash when invalid. */
     Handlebars.registerHelper("currency", function (n) {
       if (n === null || n === undefined || n === "") return "—";
       var num = Number(n);
@@ -48,16 +51,33 @@
   }
 
   window.AppUtils = {
+    /**
+     * Finds the first array element whose idKey matches id (numeric compare).
+     * @param {object[]} arr
+     * @param {string} idKey
+     * @param {number|string} id
+     * @returns {object|undefined}
+     */
     findById: function (arr, idKey, id) {
       var n = Number(id);
       return arr.find(function (r) {
         return Number(r[idKey]) === n;
       });
     },
+    /**
+     * Full customer label for dropdowns: `First Last — email`.
+     * @param {object|null|undefined} c
+     * @returns {string}
+     */
     customerLabel: function (c) {
       if (!c) return "";
       return c.firstName + " " + c.lastName + " — " + c.email;
     },
+    /**
+     * Short customer display name: `First Last`.
+     * @param {object|null|undefined} c
+     * @returns {string}
+     */
     customerShortName: function (c) {
       if (!c) return "";
       return c.firstName + " " + c.lastName;
@@ -81,6 +101,10 @@
             : "?";
       return email + "-" + ts;
     },
+    /**
+     * Returns the current local time as MySQL `YYYY-MM-DD HH:MM:SS`.
+     * @returns {string}
+     */
     currentTimestamp: function () {
       var now = new Date();
       var pad = function (n) {

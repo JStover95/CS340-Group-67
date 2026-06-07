@@ -28,6 +28,11 @@
  * Inline order-items table: add/remove rows; derive price, line totals, and order total.
  */
 (function (global) {
+  /**
+   * Escapes HTML special characters in a string for safe insertion into markup.
+   * @param {*} str
+   * @returns {string}
+   */
   function escapeHtml(str) {
     if (str == null) return "";
     return String(str)
@@ -37,6 +42,12 @@
       .replace(/"/g, "&quot;");
   }
 
+  /**
+   * Looks up an item by itemId in the catalog array.
+   * @param {object[]} items
+   * @param {number|string} itemId
+   * @returns {object|null}
+   */
   function getItem(items, itemId) {
     if (!itemId) return null;
     return items.find(function (it) {
@@ -44,17 +55,33 @@
     });
   }
 
+  /**
+   * Formats a number as USD currency for display, or em dash when invalid.
+   * @param {*} n
+   * @returns {string}
+   */
   function formatMoney(n) {
     if (n === null || n === undefined || n === "" || Number.isNaN(Number(n))) return "—";
     return "$" + Number(n).toFixed(2);
   }
 
+  /**
+   * Parses a currency display string back to a number.
+   * @param {*} text
+   * @returns {number}
+   */
   function parseMoney(text) {
     if (!text) return NaN;
     var cleaned = String(text).replace(/[^0-9.-]/g, "");
     return Number(cleaned);
   }
 
+  /**
+   * Builds `<option>` HTML for the item select in an order line row.
+   * @param {object[]} items
+   * @param {number|string|null|undefined} selectedId
+   * @returns {string}
+   */
   function buildItemSelectOptions(items, selectedId) {
     var parts = [];
     parts.push('<option value="">— Select item —</option>');
@@ -76,12 +103,23 @@
     return parts.join("");
   }
 
+  /**
+   * Coerces quantity input to a positive integer (minimum 1).
+   * @param {*} raw
+   * @returns {number}
+   */
   function normalizeQty(raw) {
     var q = raw === "" || raw === null ? 1 : parseInt(raw, 10);
     if (!Number.isFinite(q) || q < 1) q = 1;
     return q;
   }
 
+  /**
+   * Recalculates unit price, line total, and order total for one order-item row.
+   * @param {HTMLTableRowElement} tr
+   * @param {object[]} items
+   * @param {HTMLElement|null} orderTotalEl
+   */
   function recalcRow(tr, items, orderTotalEl) {
     var select = tr.querySelector(".oi-item");
     var qtyInput = tr.querySelector(".oi-qty");
@@ -107,6 +145,11 @@
     recalcOrderTotal(orderTotalEl, items);
   }
 
+  /**
+   * Sums line totals across all order-item rows into the order total display.
+   * @param {HTMLElement|null} orderTotalEl
+   * @param {object[]} items
+   */
   function recalcOrderTotal(orderTotalEl, items) {
     if (!orderTotalEl) return;
     var sum = 0;
@@ -122,6 +165,10 @@
     orderTotalEl.textContent = formatMoney(sum);
   }
 
+  /**
+   * Shows or hides the empty-state row based on whether any line rows exist.
+   * @param {HTMLTableSectionElement} tbody
+   */
   function updateEmptyFlag(tbody) {
     var emptyRow = tbody.querySelector("#order-empty-msg");
     if (!emptyRow) return;
@@ -129,6 +176,14 @@
     emptyRow.classList.toggle("hidden", count > 0);
   }
 
+  /**
+   * Appends a new editable order-item row to the table body.
+   * @param {HTMLTableSectionElement} tbody
+   * @param {object[]} items
+   * @param {HTMLElement|null} orderTotalEl
+   * @param {number|string|null|undefined} [itemIdPref]
+   * @param {number|string|null|undefined} [qtyPref]
+   */
   function appendRow(tbody, items, orderTotalEl, itemIdPref, qtyPref) {
     var qtyVal = qtyPref != null ? normalizeQty(qtyPref) : 1;
     var tr = document.createElement("tr");
@@ -160,6 +215,12 @@
     recalcRow(tr, items, orderTotalEl);
   }
 
+  /**
+   * Reads order line payloads from the inline table for API submission.
+   * @param {HTMLTableSectionElement} tbody
+   * @param {object[]} items
+   * @returns {{itemId: number, quantity: number, price: number, lineTotal: number}[]}
+   */
   function collectOrderLines(tbody, items) {
     var lines = [];
     tbody.querySelectorAll(".order-item-row").forEach(function (tr) {
@@ -181,6 +242,12 @@
     return lines;
   }
 
+  /**
+   * Replaces all order lines for an order by deleting existing rows then creating new ones.
+   * @param {number|string} orderId
+   * @param {object[]} lines
+   * @returns {Promise<void>}
+   */
   function replaceOrderItems(orderId, lines) {
     return AppApi.fetchOrderItems().then(function (rows) {
       var existing = rows.filter(function (row) {
@@ -209,6 +276,7 @@
   }
 
   /**
+   * Wires up the order create/edit form: inline items table, totals, and submit handler.
    * @param {{mode:'create'|'edit', order?:object, orderItems?:object[], items:object[]}} opts
    */
   global.initOrdersForm = function initOrdersForm(opts) {
@@ -223,6 +291,7 @@
 
     if (!form || !tbody || !orderTotalEl || !btnAdd) return;
 
+    /** Recalculates a single order-item row and the order total. */
     function recalc(tr) {
       recalcRow(tr, items, orderTotalEl);
     }
