@@ -6,6 +6,14 @@
  * - Prompted to avoid `SELECT *` for `Artists`, `Genres`, and `Customers` by explicitly selecting schema columns from `sql/ddl.sql`.
  */
 
+/** Date: 06/07/2026
+ * AI tools were used to generate this code (Cursor Composer 2.5).
+ *
+ * Summary of prompts:
+ * - Prompted to extend list queries with foreign-key columns needed by edit forms and order-item labels.
+ * - Prompted to add a `statuses` query for order form dropdowns.
+ */
+
 // Based on sql/dml.sql; artists/genres/customers use explicit columns.
 export const queries = {
   artists: `
@@ -32,6 +40,13 @@ export const queries = {
       shippingAddress
     FROM Customers;
   `,
+  statuses: `
+    SELECT
+      statusId,
+      statusCode,
+      description
+    FROM Statuses;
+  `,
   items: `
     SELECT
       Items.itemId,
@@ -40,6 +55,8 @@ export const queries = {
       Items.price,
       Items.description,
       Items.image,
+      Items.artistId,
+      Items.genreId,
       Artists.name AS artistName,
       Genres.name AS genreName
     FROM Items
@@ -49,8 +66,11 @@ export const queries = {
   orders: `
     SELECT
       Orders.orderId,
+      Orders.customerId,
+      Orders.statusId,
       Customers.firstName,
       Customers.lastName,
+      Customers.email,
       Statuses.statusCode,
       Orders.orderTimestamp,
       Orders.orderTotal
@@ -62,6 +82,7 @@ export const queries = {
     SELECT
       OrderItems.orderItemId,
       OrderItems.orderId,
+      OrderItems.itemId,
       Items.title,
       OrderItems.quantity,
       OrderItems.price,
