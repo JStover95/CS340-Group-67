@@ -15,6 +15,12 @@
  - Prompted for todo-driven execution discipline: existing plan todos marked in progress/completed sequentially without recreating plan tasks.
  - Prompted for brief task-status communication when the smoke-test local server job ended in aborted state, with no further action required.
  - Prompted for final concise recap request for conversation prompts and requirement discussion points.
+
+ Date: 06/07/2026
+ AI tools were used to generate this code (Cursor Composer 2.5).
+
+ Summary of prompts:
+ - Prompted to submit create forms through backend stored-procedure endpoints instead of local JSON data.
 -->
 
 <!DOCTYPE html>
@@ -25,7 +31,7 @@
   <title>Create Artist · OSU Record Store</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
-  <script src="./js/data.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -56,16 +62,20 @@
     </main>
   </div>
   <script>
-    window.dataReady.then(function () {
-      document.getElementById("form-artist").addEventListener("submit", function (e) {
-        e.preventDefault();
-        var fd = new FormData(e.target);
-        var obj = {};
-        fd.forEach(function (v, k) {
-          obj[k] = v;
+    document.getElementById("form-artist").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var fd = new FormData(e.target);
+      AppApi.createArtist({
+        name: fd.get("name"),
+        country: fd.get("country") || null,
+        bio: fd.get("bio") || null,
+      })
+        .then(function () {
+          window.location.href = "./artists.html";
+        })
+        .catch(function (err) {
+          alert(err.message || "Failed to create artist.");
         });
-        alert("Create Artist (no backend yet):\n\n" + JSON.stringify(obj, null, 2));
-      });
     });
   </script>
 </body>

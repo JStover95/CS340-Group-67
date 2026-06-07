@@ -22,6 +22,12 @@
  * Summary of prompts:
  * - Prompted to add a reset button at the bottom of the left navigation that calls `POST /reset`.
  * - Prompted to refresh the page on success and show an alert on failure.
+ *
+ * Date: 06/07/2026
+ * AI tools were used to generate this code (Cursor Composer 2.5).
+ *
+ * Summary of prompts:
+ * - Prompted to route reset-database actions exclusively through `AppApi.resetDatabase()`.
  */
 
 /**
@@ -117,21 +123,12 @@
       return;
     }
 
-    var resetPromise =
-      window.AppApi && window.AppApi.resetDatabase
-        ? window.AppApi.resetDatabase()
-        : fetch("http://classwork.engr.oregonstate.edu:3712/reset", { method: "POST" }).then(
-            function (res) {
-              if (!res.ok) {
-                return res.json().then(function (body) {
-                  throw new Error(
-                    (body && body.message) || "Failed to reset database."
-                  );
-                });
-              }
-              return res.json();
-            }
-          );
+    if (!window.AppApi || !window.AppApi.resetDatabase) {
+      alert("Reset is unavailable because the API layer is not loaded.");
+      return;
+    }
+
+    var resetPromise = window.AppApi.resetDatabase();
 
     resetPromise
       .then(function () {

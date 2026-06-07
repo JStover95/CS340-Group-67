@@ -15,11 +15,17 @@
  * - Prompted for todo-driven execution discipline: existing plan todos marked in progress/completed sequentially without recreating plan tasks.
  * - Prompted for brief task-status communication when the smoke-test local server job ended in aborted state, with no further action required.
  * - Prompted for final concise recap request for conversation prompts and requirement discussion points.
+ *
+ * Date: 06/07/2026
+ * AI tools were used to generate this code (Cursor Composer 2.5).
+ *
+ * Summary of prompts:
+ * - Prompted to submit order create/edit forms through backend stored-procedure endpoints.
+ * - Prompted to replace existing order items on edit by deleting prior lines and creating the submitted set.
  */
 
 /**
  * Inline order-items table: add/remove rows; derive price, line totals, and order total.
- * Submit uses alert(...) only until backend wiring (see FK / cascade notes on list-page delete handlers).
  */
 (function (global) {
   function escapeHtml(str) {
@@ -41,6 +47,12 @@
   function formatMoney(n) {
     if (n === null || n === undefined || n === "" || Number.isNaN(Number(n))) return "—";
     return "$" + Number(n).toFixed(2);
+  }
+
+  function parseMoney(text) {
+    if (!text) return NaN;
+    var cleaned = String(text).replace(/[^0-9.-]/g, "");
+    return Number(cleaned);
   }
 
   function buildItemSelectOptions(items, selectedId) {
@@ -148,18 +160,66 @@
     recalcRow(tr, items, orderTotalEl);
   }
 
+  function collectOrderLines(tbody, items) {
+    var lines = [];
+    tbody.querySelectorAll(".order-item-row").forEach(function (tr) {
+      var select = tr.querySelector(".oi-item");
+      var qtyInput = tr.querySelector(".oi-qty");
+      if (!select || !select.value || !qtyInput) return;
+      var itemId = Number(select.value);
+      var quantity = normalizeQty(qtyInput.value);
+      var it = getItem(items, itemId);
+      var price = it != null ? Number(it.price) : NaN;
+      if (Number.isNaN(price)) return;
+      lines.push({
+        itemId: itemId,
+        quantity: quantity,
+        price: price,
+        lineTotal: price * quantity,
+      });
+    });
+    return lines;
+  }
+
+  function replaceOrderItems(orderId, lines) {
+    return AppApi.fetchOrderItems().then(function (rows) {
+      var existing = rows.filter(function (row) {
+        return Number(row.orderId) === Number(orderId);
+      });
+      return existing
+        .reduce(function (chain, row) {
+          return chain.then(function () {
+            return AppApi.deleteOrderItem(row.orderItemId);
+          });
+        }, Promise.resolve())
+        .then(function () {
+          return lines.reduce(function (chain, line) {
+            return chain.then(function () {
+              return AppApi.createOrderItem({
+                orderId: orderId,
+                itemId: line.itemId,
+                quantity: line.quantity,
+                price: line.price,
+                lineTotal: line.lineTotal,
+              });
+            });
+          }, Promise.resolve());
+        });
+    });
+  }
+
   /**
-   * @param {{mode:'create'|'edit', order?:object}} opts
+   * @param {{mode:'create'|'edit', order?:object, orderItems?:object[], items:object[]}} opts
    */
   global.initOrdersForm = function initOrdersForm(opts) {
     var mode = opts.mode;
     var order = opts.order || null;
+    var items = opts.items || [];
 
     var form = document.getElementById("form-order");
     var tbody = document.getElementById("order-items-body");
     var orderTotalEl = document.getElementById("order-total-display");
     var btnAdd = document.getElementById("btn-add-order-item");
-    var items = AppData.items;
 
     if (!form || !tbody || !orderTotalEl || !btnAdd) return;
 
@@ -198,7 +258,7 @@
     });
 
     if (mode === "edit" && order) {
-      var lines = AppData.orderItems.filter(function (oi) {
+      var lines = (opts.orderItems || []).filter(function (oi) {
         return Number(oi.orderId) === Number(order.orderId);
       });
       lines.forEach(function (oi) {
@@ -212,37 +272,58 @@
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var fd = new FormData(form);
-      var payload = {};
+      var customerId = Number(fd.get("customerId"));
+      var statusId = Number(fd.get("statusId"));
+      var orderTotal = parseMoney(orderTotalEl.textContent.trim());
+      var lines = collectOrderLines(tbody, items);
 
-      fd.forEach(function (v, k) {
-        payload[k] = v;
-      });
+      if (!Number.isFinite(customerId) || !Number.isFinite(statusId)) {
+        alert("Customer and status are required.");
+        return;
+      }
 
-      payload.orderLines = [];
+      if (Number.isNaN(orderTotal)) orderTotal = 0;
 
-      tbody.querySelectorAll(".order-item-row").forEach(function (tr) {
-        var sid = tr.querySelector(".oi-item").value;
-        if (!sid) return;
-        var qRaw = tr.querySelector(".oi-qty").value;
-        payload.orderLines.push({
-          itemId: Number(sid),
-          quantity: normalizeQty(qRaw),
+      var submitPromise;
+      if (mode === "create") {
+        submitPromise = AppApi.createOrder({
+          customerId: customerId,
+          statusId: statusId,
+          orderTimestamp: AppUtils.currentTimestamp(),
+          orderTotal: orderTotal,
+        }).then(function (result) {
+          return lines.reduce(function (chain, line) {
+            return chain.then(function () {
+              return AppApi.createOrderItem({
+                orderId: result.insertId,
+                itemId: line.itemId,
+                quantity: line.quantity,
+                price: line.price,
+                lineTotal: line.lineTotal,
+              });
+            });
+          }, Promise.resolve());
         });
-      });
+      } else if (order) {
+        submitPromise = AppApi.updateOrder(order.orderId, {
+          customerId: customerId,
+          statusId: statusId,
+          orderTimestamp: order.orderTimestamp,
+          orderTotal: orderTotal,
+        }).then(function () {
+          return replaceOrderItems(order.orderId, lines);
+        });
+      } else {
+        return;
+      }
 
-      var timestampEl = document.getElementById("order-timestamp-display");
-      if (timestampEl)
-        payload.orderTimestampDisplayNote = timestampEl.textContent.trim();
-
-      payload.orderTotalDerivedDisplay = orderTotalEl.textContent.trim();
-
-      if (mode === "edit" && order) payload.orderId = order.orderId;
-
-      var actionLabel = mode === "edit" ? "Update Order" : "Create Order";
-
-      alert(
-        actionLabel + " (no backend yet):\n\n" + JSON.stringify(payload, null, 2)
-      );
+      submitPromise
+        .then(function () {
+          window.location.href = "./orders.html";
+        })
+        .catch(function (err) {
+          alert(err.message || "Failed to save order.");
+        });
     });
   };
 })(window);

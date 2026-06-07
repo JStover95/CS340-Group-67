@@ -8,6 +8,12 @@
  - Price and line total should be calculated from the item and item x quantity
  - The read page should present a table meeting the same requirements as other read pages
  - The read page should also show Item ID and Order ID foreign keys in addition to the item name and  `<customer email>-<order timestamp>` labels
+
+ Date: 06/07/2026
+ AI tools were used to generate this code (Cursor Composer 2.5).
+
+ Summary of prompts:
+ - Prompted to load order-item edit data from the server and submit updates through stored-procedure endpoints.
 -->
 
 <!DOCTYPE html>
@@ -18,7 +24,8 @@
   <title>Edit Order Item · OSU Record Store</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
-  <script src="./js/data.js"></script>
+  <script src="./js/utils.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -72,8 +79,10 @@
   </script>
 
   <script>
+    var catalogItems = [];
+
     function getItemById(id) {
-      return AppUtils.findById(AppData.items, "itemId", id);
+      return AppUtils.findById(catalogItems, "itemId", id);
     }
 
     function formatMoney(n) {
@@ -103,55 +112,83 @@
       lineEl.textContent = Number.isFinite(line) ? formatMoney(line) : "—";
     }
 
-    window.dataReady.then(function () {
+    (function () {
       var params = new URLSearchParams(window.location.search);
       var id = params.get("id");
-      var row = AppUtils.findById(AppData.orderItems, "orderItemId", id);
-      if (!row) {
-        var err = document.getElementById("err-not-found");
-        err.textContent =
-          "Order item not found for id: " + (id != null ? id : "(missing)");
-        err.classList.remove("hidden");
-        return;
-      }
 
-      var ordersDd = AppData.orders.map(function (o) {
-        return {
-          orderId: o.orderId,
-          label: AppUtils.orderItemOrderLabel(o),
-        };
-      });
+      Promise.all([
+        AppApi.fetchOrderItemsRaw(),
+        AppApi.fetchOrders(),
+        AppApi.fetchItems(),
+      ])
+        .then(function (results) {
+          var row = AppUtils.findById(results[0], "orderItemId", id);
+          if (!row) {
+            var err = document.getElementById("err-not-found");
+            err.textContent =
+              "Order item not found for id: " + (id != null ? id : "(missing)");
+            err.classList.remove("hidden");
+            return;
+          }
 
-      var tpl = Handlebars.compile(
-        document.getElementById("tpl-order-item-edit").innerHTML
-      );
-      document.getElementById("form-order-item").innerHTML = tpl({
-        row: row,
-        orders: ordersDd,
-        items: AppData.items,
-      });
-      document.getElementById("form-wrap").classList.remove("hidden");
+          catalogItems = results[2];
+          var ordersDd = results[1].map(function (o) {
+            return {
+              orderId: o.orderId,
+              label: AppUtils.orderItemOrderLabel(o),
+            };
+          });
 
-      ["orderId", "itemId"].forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) el.addEventListener("change", recalcOrderItemForm);
-      });
-      document.getElementById("quantity").addEventListener("input", recalcOrderItemForm);
-      recalcOrderItemForm();
+          var tpl = Handlebars.compile(
+            document.getElementById("tpl-order-item-edit").innerHTML
+          );
+          document.getElementById("form-order-item").innerHTML = tpl({
+            row: row,
+            orders: ordersDd,
+            items: catalogItems,
+          });
+          document.getElementById("form-wrap").classList.remove("hidden");
 
-      document.getElementById("form-order-item").addEventListener("submit", function (e) {
-        e.preventDefault();
-        var fd = new FormData(e.target);
-        var obj = {};
-        fd.forEach(function (v, k) {
-          obj[k] = k === "quantity" ? Number(v) : v;
+          ["orderId", "itemId"].forEach(function (fieldId) {
+            var el = document.getElementById(fieldId);
+            if (el) el.addEventListener("change", recalcOrderItemForm);
+          });
+          document
+            .getElementById("quantity")
+            .addEventListener("input", recalcOrderItemForm);
+          recalcOrderItemForm();
+
+          document
+            .getElementById("form-order-item")
+            .addEventListener("submit", function (e) {
+              e.preventDefault();
+              var fd = new FormData(e.target);
+              var item = getItemById(fd.get("itemId"));
+              var price = item != null ? Number(item.price) : NaN;
+              var quantity = normalizeQty(fd.get("quantity"));
+              if (Number.isNaN(price)) {
+                alert("Select a valid item.");
+                return;
+              }
+              AppApi.updateOrderItem(row.orderItemId, {
+                orderId: Number(fd.get("orderId")),
+                itemId: Number(fd.get("itemId")),
+                quantity: quantity,
+                price: price,
+                lineTotal: price * quantity,
+              })
+                .then(function () {
+                  window.location.href = "./order-items.html";
+                })
+                .catch(function (err) {
+                  alert(err.message || "Failed to update order item.");
+                });
+            });
+        })
+        .catch(function () {
+          alert("Failed to load order item data from the server.");
         });
-        obj.orderItemId = row.orderItemId;
-        obj.priceDisplay = document.getElementById("display-price").textContent.trim();
-        obj.lineTotalDisplay = document.getElementById("display-line-total").textContent.trim();
-        alert("Update Order Item (no backend yet):\n\n" + JSON.stringify(obj, null, 2));
-      });
-    });
+    })();
   </script>
 </body>
 </html>

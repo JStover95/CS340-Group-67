@@ -15,6 +15,12 @@
  - Prompted for todo-driven execution discipline: existing plan todos marked in progress/completed sequentially without recreating plan tasks.
  - Prompted for brief task-status communication when the smoke-test local server job ended in aborted state, with no further action required.
  - Prompted for final concise recap request for conversation prompts and requirement discussion points.
+
+ Date: 06/07/2026
+ AI tools were used to generate this code (Cursor Composer 2.5).
+
+ Summary of prompts:
+ - Prompted to load edit forms from backend GET endpoints and submit updates through stored-procedure endpoints.
 -->
 
 <!DOCTYPE html>
@@ -25,7 +31,8 @@
   <title>Edit Customer · OSU Record Store</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
-  <script src="./js/data.js"></script>
+  <script src="./js/utils.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -66,31 +73,49 @@
   </script>
 
   <script>
-    window.dataReady.then(function () {
+    (function () {
       var params = new URLSearchParams(window.location.search);
       var id = params.get("id");
-      var row = AppUtils.findById(AppData.customers, "customerId", id);
-      if (!row) {
-        var err = document.getElementById("err-not-found");
-        err.textContent = "Customer not found for id: " + (id != null ? id : "(missing)");
-        err.classList.remove("hidden");
-        return;
-      }
-      var tpl = Handlebars.compile(document.getElementById("tpl-customer-form").innerHTML);
-      document.getElementById("form-customer").innerHTML = tpl(row);
-      document.getElementById("form-wrap").classList.remove("hidden");
 
-      document.getElementById("form-customer").addEventListener("submit", function (e) {
-        e.preventDefault();
-        var fd = new FormData(e.target);
-        var obj = {};
-        fd.forEach(function (v, k) {
-          obj[k] = v;
+      AppApi.fetchCustomers()
+        .then(function (customers) {
+          var row = AppUtils.findById(customers, "customerId", id);
+          if (!row) {
+            var err = document.getElementById("err-not-found");
+            err.textContent =
+              "Customer not found for id: " + (id != null ? id : "(missing)");
+            err.classList.remove("hidden");
+            return;
+          }
+          var tpl = Handlebars.compile(
+            document.getElementById("tpl-customer-form").innerHTML
+          );
+          document.getElementById("form-customer").innerHTML = tpl(row);
+          document.getElementById("form-wrap").classList.remove("hidden");
+
+          document
+            .getElementById("form-customer")
+            .addEventListener("submit", function (e) {
+              e.preventDefault();
+              var fd = new FormData(e.target);
+              AppApi.updateCustomer(row.customerId, {
+                firstName: fd.get("firstName"),
+                lastName: fd.get("lastName"),
+                email: fd.get("email"),
+                shippingAddress: fd.get("shippingAddress"),
+              })
+                .then(function () {
+                  window.location.href = "./customers.html";
+                })
+                .catch(function (err) {
+                  alert(err.message || "Failed to update customer.");
+                });
+            });
+        })
+        .catch(function () {
+          alert("Failed to load customer from the server.");
         });
-        obj.customerId = row.customerId;
-        alert("Update Customer (no backend yet):\n\n" + JSON.stringify(obj, null, 2));
-      });
-    });
+    })();
   </script>
 </body>
 </html>

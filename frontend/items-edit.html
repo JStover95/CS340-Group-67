@@ -15,6 +15,12 @@
  - Prompted for todo-driven execution discipline: existing plan todos marked in progress/completed sequentially without recreating plan tasks.
  - Prompted for brief task-status communication when the smoke-test local server job ended in aborted state, with no further action required.
  - Prompted for final concise recap request for conversation prompts and requirement discussion points.
+
+ Date: 06/07/2026
+ AI tools were used to generate this code (Cursor Composer 2.5).
+
+ Summary of prompts:
+ - Prompted to load item edit data from the server and submit updates through stored-procedure endpoints.
 -->
 
 <!DOCTYPE html>
@@ -25,7 +31,8 @@
   <title>Edit Item · OSU Record Store</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
-  <script src="./js/data.js"></script>
+  <script src="./js/utils.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
 </head>
 <body class="bg-gray-100 antialiased">
@@ -97,39 +104,63 @@
   </script>
 
   <script>
-    window.dataReady.then(function () {
+    (function () {
       var params = new URLSearchParams(window.location.search);
       var id = params.get("id");
-      var item = AppUtils.findById(AppData.items, "itemId", id);
-      if (!item) {
-        var err = document.getElementById("err-not-found");
-        err.textContent = "Item not found for id: " + (id != null ? id : "(missing)");
-        err.classList.remove("hidden");
-        return;
-      }
-      var ctx = Object.assign({}, item, {
-        artists: AppData.artists,
-        genres: AppData.genres,
-      });
-      var tpl = Handlebars.compile(document.getElementById("tpl-item-form").innerHTML);
-      document.getElementById("form-item").innerHTML = tpl(ctx);
-      document.getElementById("form-wrap").classList.remove("hidden");
 
-      document.getElementById("form-item").addEventListener("submit", function (e) {
-        e.preventDefault();
-        var form = e.target;
-        var obj = {};
-        var fd = new FormData(form);
-        fd.delete("imageFile");
-        fd.forEach(function (v, k) {
-          obj[k] = v;
+      Promise.all([
+        AppApi.fetchItems(),
+        AppApi.fetchArtists(),
+        AppApi.fetchGenres(),
+      ])
+        .then(function (results) {
+          var item = AppUtils.findById(results[0], "itemId", id);
+          if (!item) {
+            var err = document.getElementById("err-not-found");
+            err.textContent =
+              "Item not found for id: " + (id != null ? id : "(missing)");
+            err.classList.remove("hidden");
+            return;
+          }
+          var ctx = Object.assign({}, item, {
+            artists: results[1],
+            genres: results[2],
+          });
+          var tpl = Handlebars.compile(
+            document.getElementById("tpl-item-form").innerHTML
+          );
+          document.getElementById("form-item").innerHTML = tpl(ctx);
+          document.getElementById("form-wrap").classList.remove("hidden");
+
+          document.getElementById("form-item").addEventListener("submit", function (e) {
+            e.preventDefault();
+            var fd = new FormData(e.target);
+            var fileEl = document.getElementById("image");
+            var image =
+              fileEl.files && fileEl.files[0]
+                ? fileEl.files[0].name
+                : item.image || null;
+            AppApi.updateItem(item.itemId, {
+              type: fd.get("type"),
+              title: fd.get("title"),
+              price: Number(fd.get("price")),
+              description: fd.get("description") || null,
+              image: image,
+              artistId: Number(fd.get("artistId")),
+              genreId: Number(fd.get("genreId")),
+            })
+              .then(function () {
+                window.location.href = "./items.html";
+              })
+              .catch(function (err) {
+                alert(err.message || "Failed to update item.");
+              });
+          });
+        })
+        .catch(function () {
+          alert("Failed to load item data from the server.");
         });
-        obj.itemId = item.itemId;
-        var fileEl = document.getElementById("image");
-        obj.imageFilename = fileEl.files && fileEl.files[0] ? fileEl.files[0].name : null;
-        alert("Update Item (no backend yet):\n\n" + JSON.stringify(obj, null, 2));
-      });
-    });
+    })();
   </script>
 </body>
 </html>

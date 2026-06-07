@@ -15,6 +15,12 @@
  - Prompted for todo-driven execution discipline: existing plan todos marked in progress/completed sequentially without recreating plan tasks.
  - Prompted for brief task-status communication when the smoke-test local server job ended in aborted state, with no further action required.
  - Prompted for final concise recap request for conversation prompts and requirement discussion points.
+
+ Date: 06/07/2026
+ AI tools were used to generate this code (Cursor Composer 2.5).
+
+ Summary of prompts:
+ - Prompted to load order form dropdowns from the server and create orders with line items through stored-procedure endpoints.
 -->
 
 <!DOCTYPE html>
@@ -25,7 +31,8 @@
   <title>Create Order · OSU Record Store</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.8/dist/handlebars.min.js"></script>
-  <script src="./js/data.js"></script>
+  <script src="./js/utils.js"></script>
+  <script src="./js/api.js"></script>
   <script src="./js/layout.js"></script>
   <script src="./js/orders-form.js"></script>
 </head>
@@ -110,22 +117,30 @@
   </script>
 
   <script>
-    window.dataReady.then(function () {
-      var customersDd = AppData.customers.map(function (c) {
-        return {
-          customerId: c.customerId,
-          label: AppUtils.customerLabel(c),
-        };
+    Promise.all([
+      AppApi.fetchCustomers(),
+      AppApi.fetchStatuses(),
+      AppApi.fetchItems(),
+    ])
+      .then(function (results) {
+        var customersDd = results[0].map(function (c) {
+          return {
+            customerId: c.customerId,
+            label: AppUtils.customerLabel(c),
+          };
+        });
+        var tpl = Handlebars.compile(
+          document.getElementById("tpl-create-order").innerHTML
+        );
+        document.getElementById("form-mount").innerHTML = tpl({
+          customers: customersDd,
+          statuses: results[1],
+        });
+        initOrdersForm({ mode: "create", items: results[2] });
+      })
+      .catch(function () {
+        alert("Failed to load order form data from the server.");
       });
-      var tpl = Handlebars.compile(
-        document.getElementById("tpl-create-order").innerHTML
-      );
-      document.getElementById("form-mount").innerHTML = tpl({
-        customers: customersDd,
-        statuses: AppData.statuses,
-      });
-      initOrdersForm({ mode: "create" });
-    });
   </script>
 </body>
 </html>
